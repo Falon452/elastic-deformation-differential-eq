@@ -1,0 +1,123 @@
+# Finite Element Method
+n <- 4
+
+# returns x that e(x,i) is 1 (center)
+xi <- function(i){
+  return(2*i / n)
+}
+
+# base function
+e <- function(x, i){
+  if (xi(i - 1) < x && x <= xi(i)){
+    return (n/2*x - i + 1)
+  }
+  else if (xi(i) < x && x <= xi(i+1)){
+    return (-n/2*x + i + 1)
+  }
+  else {
+    return (0)
+  }
+}
+
+
+# derivative of e
+ePrim <- function(x, i){
+  if (xi(i-1) < x && x <= xi(i)){
+    return (n/2)
+  }
+  else if (xi(i) < x && x < xi(i+1)){
+    return (-n/2)
+  }
+  return (0)
+
+}
+
+# Gaussian quadrature 2 point
+# https://en.wikipedia.org/wiki/Gaussian_quadrature
+integrate <- function(f, a, b){
+  h1 <- (b-a)/2
+  h2 <- (b+a)/2
+  return(h1 * (f(h1*(1/sqrt(3)) + h2) + f(h1*(-1/sqrt(3)) + h2)))
+}
+
+# Given function E
+E <- function(x) {
+  if (0 <= x && x <= 1) {
+    return (3)
+  } else if (1 < x && x <= 2){
+    return (5)
+  }
+  return (0)
+}
+
+# Function to integrate
+func_to_integrate <- function(i, j){
+  return (function(x){
+      return(E(x) * ePrim(x, i) * ePrim(x, j))
+    }
+  )
+}
+
+# B(u,v)...
+# lower upper is the intersection of domain of base function and global domain
+B <- function(i, j){
+  if (abs(i- j) > 2) {
+      integrated_result <- 0
+  } else {
+      if (i == j){
+        lower <- max(0, xi(i-1))
+        upper <- min(2, xi(i+1))
+      } else {
+        lower <- max(0, xi(min(i,j)))
+        upper <- min(2, xi(max(i,j)))
+      }
+    integrated_result <- integrate(func_to_integrate(i,j), lower, upper)
+  }
+
+  return(E(0)*e(0, i)*e(0, j) - integrated_result)
+}
+
+# L(v)...
+L <- function(i){
+  return(10*E(0)*e(0, i))
+}
+
+
+
+solution <- function(){
+  B_matrix <- matrix(nrow = n, ncol = n)
+  for (i in 1:n){
+    for (j in 1:n){
+      B_matrix[i,j] <- B(j-1, i-1)
+    }
+  }
+
+  L_vec <- vector(length = n)
+  for (i in 1:n){
+    L_vec[i] <- L(i-1)
+  }
+
+  ws <- solve(B_matrix, L_vec)
+
+  result_function <- function(x, w = ws){
+    linear_combination_vec <- vector(length = n)
+    for (i in 1:n) {
+      linear_combination_vec[i] <- w[i]*e(x, i-1)
+    }
+    return(sum(linear_combination_vec))
+  }
+  
+  return (result_function)
+}
+
+plot_result <- function(){
+  u_func <- solution()
+  plot(seq(0, 2, length=200),
+       mapply(u_func, seq(0, 2, length=200)),
+       main = 'Elastic deformation',
+       xlab='x',
+       ylab='u(x)',
+       type='l')
+}
+
+plot_result()
