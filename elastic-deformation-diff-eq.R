@@ -1,5 +1,4 @@
-# Finite Element Method
-n <- 4
+n <- 2000
 
 # returns x that e(x,i) is 1 (center)
 xi <- function(i){
@@ -29,7 +28,6 @@ ePrim <- function(x, i){
     return (-n/2)
   }
   return (0)
-
 }
 
 # Gaussian quadrature 2 point
@@ -73,7 +71,6 @@ B <- function(i, j){
       }
     integrated_result <- integrate(func_to_integrate(i,j), lower, upper)
   }
-
   return(E(0)*e(0, i)*e(0, j) - integrated_result)
 }
 
@@ -81,7 +78,7 @@ B <- function(i, j){
 L <- function(i){
   return(10*E(0)*e(0, i))
 }
-
+?solve
 
 
 solution <- function(){
@@ -99,15 +96,14 @@ solution <- function(){
 
   ws <- solve(B_matrix, L_vec)
 
-  result_function <- function(x, w = ws){
-    linear_combination_vec <- vector(length = n)
+  u <- function(x, w = ws){
+    linear_combination <- vector(length = n)
     for (i in 1:n) {
-      linear_combination_vec[i] <- w[i]*e(x, i-1)
+      linear_combination[i] <- w[i]*e(x, i-1)
     }
-    return(sum(linear_combination_vec))
+    return(sum(linear_combination))
   }
-  
-  return (result_function)
+  return (u)
 }
 
 plot_result <- function(){
